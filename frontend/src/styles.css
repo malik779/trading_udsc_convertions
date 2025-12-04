@@ -1,0 +1,19 @@
+:root {
+  --bg: #040510;
+  --panel: #101226;
+  --primary: #2ad3ff;
+  --success: #2ecc71;
+  --danger: #ff5f6d;
+  color-scheme: dark;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: #f6f7fb;
+}
+
+a {
+  color: var(--primary);
+}

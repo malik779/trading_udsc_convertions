@@ -1,0 +1,15 @@
+<h2>Choose Your Plan</h2>
+<form [formGroup]="form" (ngSubmit)="checkout()">
+  <div class="plans">
+    <label *ngFor="let plan of plans" [class.selected]="form.value.plan === plan.id">
+      <input type="radio" formControlName="plan" [value]="plan.id" />
+      <div>
+        <h3>{{ plan.name }}</h3>
+        <p class="price">${{ plan.monthly_price }}/mo</p>
+        <p>{{ plan.quota | number }} API calls · {{ plan.chains }} networks</p>
+      </div>
+    </label>
+  </div>
+
+  <button type="submit" [disabled]="isSubmitting">Subscribe with Stripe</button>
+</form>

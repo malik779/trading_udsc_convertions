@@ -1,0 +1,72 @@
+<section class="grid">
+  <article>
+    <h3>Total Points</h3>
+    <p>{{ stats.points | number: '1.0-2' }}</p>
+  </article>
+  <article>
+    <h3>Active Wallets</h3>
+    <p>{{ stats.activeWallets }}</p>
+  </article>
+  <article>
+    <h3>Webhook Deliveries</h3>
+    <p>{{ stats.webhooks }}</p>
+  </article>
+</section>
+
+<form [formGroup]="filters" class="filters">
+  <label>
+    Network
+    <select formControlName="network">
+      <option value="">All</option>
+      <option value="ethereum">Ethereum</option>
+      <option value="bnb">BNB Chain</option>
+      <option value="solana">Solana</option>
+    </select>
+  </label>
+  <label>
+    Type
+    <select formControlName="type">
+      <option value="">All</option>
+      <option value="deposit">Deposit</option>
+      <option value="withdrawal">Withdrawal</option>
+    </select>
+  </label>
+  <label>
+    Status
+    <select formControlName="status">
+      <option value="">All</option>
+      <option value="pending">Pending</option>
+      <option value="broadcasted">Broadcasted</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="failed">Failed</option>
+    </select>
+  </label>
+  <button type="button" (click)="refresh()">Refresh</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Network</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Hash</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let trx of transactions">
+      <td>{{ trx.type }}</td>
+      <td>{{ trx.network }}</td>
+      <td>{{ trx.amount_usdc }}</td>
+      <td>
+        <span class="pill" [class.success]="trx.status === 'confirmed'" [class.pending]="trx.status === 'pending'">
+          {{ trx.status }}
+        </span>
+      </td>
+      <td>{{ trx.tx_hash || '—' }}</td>
+      <td>{{ trx.created_at | date: 'short' }}</td>
+    </tr>
+  </tbody>
+</table>
