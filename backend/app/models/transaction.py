@@ -32,3 +32,4 @@ class Transaction(Base):
 
     tenant: Mapped["Tenant"] = relationship(back_populates="transactions")
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
+    webhook_deliveries: Mapped[list["WebhookDelivery"]] = relationship(back_populates="transaction")

@@ -5,10 +5,11 @@ A subscription-based crypto payment gateway that exposes a tenant-isolated FastA
 ## Architecture Snapshot
 
 - **Backend (`backend/`)**
-  - FastAPI + SQLAlchemy async stack with PostgreSQL and Redis primitives.
-  - Multi-tenant models (`Tenant`, `Wallet`, `Transaction`) enforce per-tenant quotas and API authentication.
-  - Blockchain abstraction layer (`app/services/blockchain_provider.py`) currently routes to **Fireblocks** for custody-grade address generation and withdrawals. Swappable adapters let you plug Moralis or Alchemy if needed.
-  - Event + webhook services manage signed callbacks to tenant platforms with idempotent processing and retry-ready payloads.
+  - FastAPI + SQLAlchemy async stack with PostgreSQL and Redis primitives, fully managed via Alembic migrations (`alembic/`).
+  - Multi-tenant models (`Tenant`, `Wallet`, `Transaction`, `WebhookDelivery`, `TenantUsage`) enforce API-key auth, per-plan quotas, and signed webhook delivery retries.
+  - Blockchain abstraction layer (`app/services/blockchain_provider.py`) targets **Fireblocks** with RSA-signed requests; adapters can swap in Moralis/Alchemy without touching business logic.
+  - Celery workers (`app/workers/`) poll deposits across networks and replay failed webhooks using Redis as broker/result store.
+  - Billing service integrates Stripe Checkout + webhooks to upgrade tenants and raise quotas automatically.
   - Treasury/trading helper (`services/trading.py`) prepared for future liquidity balancing (e.g., cross-exchange hedging, automated spreads).
 
 - **Frontend (`frontend/`)**
@@ -31,6 +32,9 @@ Fireblocks offers institutional custody, policy controls, and MPC wallets, makin
 | GET | `/transactions` | Filterable ledger (type, network, user, status, dates) |
 | POST | `/transactions/withdrawals` | Create withdrawal with idempotency + provider broadcast |
 | GET | `/metrics`, `/metrics/usage` | Dashboard stats + 7-day usage insights |
+| GET | `/billing/plans` | Publish subscription tiers + quotas to the UI |
+| POST | `/billing/checkout` | Create tenant-scoped Stripe checkout session |
+| POST | `/billing/webhook` | Stripe event intake (checkout + invoice webhooks) |
 | POST | `/webhooks/provider/deposit` | Receive blockchain provider deposit notices |
 | POST | `/webhooks/tenant/withdrawal-callback` | Update withdrawal lifecycle events |
 
@@ -50,7 +54,7 @@ Each confirmed deposit triggers internal point minting and a signed webhook payl
 ## Frontend Highlights
 - Overview cards (points, active wallets, delivered webhooks) backed by `/metrics`.
 - Filterable transaction + logs tables hitting `/transactions` with query params.
-- Subscription screen for monetization (hook up Stripe/Braintree later) to enforce plan-specific quotas stored on the tenant model.
+- Subscription screen pulls `/billing/plans` and launches tenant-authenticated Stripe checkout flows; Angular dev server proxies `/api` during local development.
 
 ## Trading & Value-Add Enhancements
 - Treasury balancing service prepared for multi-network liquidity so you can automatically rebalance USDC inventory when one chain receives high inflows.
@@ -64,9 +68,10 @@ Each confirmed deposit triggers internal point minting and a signed webhook payl
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
-Configure `.env` with `DATABASE_URL`, `FIREBLOCKS_API_KEY`, etc. Run Alembic migrations (not included yet) to create tables.
+Configure `.env` using `.env.example` (database, Redis, Fireblocks keys, Stripe prices).
 
 ### Frontend
 ```bash
@@ -74,11 +79,20 @@ cd frontend
 npm install
 npm run start
 ```
-The Angular dev server proxies to the FastAPI backend (configure `/api` proxy as needed) and requires you to paste the tenant API key into `localStorage.tenantApiKey` for authenticated calls.
+The Angular dev server (via `proxy.conf.json`) forwards `/api` to `http://localhost:8080`. Store the tenant API key in `localStorage.tenantApiKey` so the interceptor can forward it as `X-API-Key`.
+
+### Workers
+```bash
+cd backend
+celery -A app.workers.celery_app.celery_app worker -B --loglevel=info
+```
+Beat schedules two jobs:
+- `poll_deposits`: hits the provider per network, logs deposits, and triggers signed tenant webhooks.
+- `retry_webhooks`: replays failed deliveries according to the configured exponential backoff.
 
 ## Next Steps
-1. Wire Redis/Celery workers for asynchronous deposit polling + webhook retries.
-2. Add Alembic migrations + seed scripts for tenants and plans.
-3. Integrate Stripe Billing for plan subscriptions and hook usage counters into rate-limit middleware.
-4. Build real blockchain provider adapters (Fireblocks withdrawal signing, Moralis/Alchemy streaming for Solana SPL events).
-5. Harden webhook delivery logs + admin UI for replaying failed events.
+1. Flesh out provider adapters for Moralis/Alchemy streams to reduce latency on Solana SPL events.
+2. Build tenant-facing webhook delivery UI (replay button, filtering, status charts).
+3. Add automated AML/compliance hooks (Travel Rule payloads, OFAC screening) into the deposit monitor.
+4. Expand trading module with RFQ quoting + spread controls for instant conversions.
+5. Harden Stripe flow with customer portal links + dunning emails for failed invoices.

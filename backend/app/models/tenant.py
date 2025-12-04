@@ -17,6 +17,9 @@ class Tenant(Base):
     allowed_ips: Mapped[str | None] = mapped_column(String(512))
 
     plan: Mapped[str] = mapped_column(String(50), default="starter")
+    webhook_url: Mapped[str | None] = mapped_column(String(512))
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(120))
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(120))
     monthly_quota: Mapped[int] = mapped_column(default=10000)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -25,6 +28,8 @@ class Tenant(Base):
 
     wallets: Mapped[list["Wallet"]] = relationship(back_populates="tenant")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="tenant")
+    webhook_deliveries: Mapped[list["WebhookDelivery"]] = relationship(back_populates="tenant")
+    usage_records: Mapped[list["TenantUsage"]] = relationship(back_populates="tenant")
 
 
 class ApiKeyAudit(Base):

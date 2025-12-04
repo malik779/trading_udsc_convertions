@@ -1,20 +1,15 @@
 <h2>Choose Your Plan</h2>
-<div class="plans">
-  <label *ngFor="let plan of plans" [class.selected]="form.value.plan === plan.id">
-    <input type="radio" formControlName="plan" [value]="plan.id" />
-    <div>
-      <h3>{{ plan.id | titlecase }}</h3>
-      <p class="price">${{ plan.price }}/mo</p>
-      <p>{{ plan.quota }} · {{ plan.chains }} chains</p>
-    </div>
-  </label>
-</div>
-
-<form [formGroup]="form" (ngSubmit)="checkout()" class="payment">
-  <input placeholder="Card number" formControlName="card" />
-  <div class="row">
-    <input placeholder="MM/YY" formControlName="expiry" />
-    <input placeholder="CVC" formControlName="cvc" />
+<form [formGroup]="form" (ngSubmit)="checkout()">
+  <div class="plans">
+    <label *ngFor="let plan of plans" [class.selected]="form.value.plan === plan.id">
+      <input type="radio" formControlName="plan" [value]="plan.id" />
+      <div>
+        <h3>{{ plan.name }}</h3>
+        <p class="price">${{ plan.monthly_price }}/mo</p>
+        <p>{{ plan.quota | number }} API calls · {{ plan.chains }} networks</p>
+      </div>
+    </label>
   </div>
-  <button type="submit">Subscribe</button>
+
+  <button type="submit" [disabled]="isSubmitting">Subscribe with Stripe</button>
 </form>

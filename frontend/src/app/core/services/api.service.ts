@@ -13,6 +13,14 @@ export interface Transaction {
   user_reference?: string;
 }
 
+export interface Plan {
+  id: string;
+  name: string;
+  monthly_price: number;
+  quota: number;
+  chains: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly baseUrl = '/api/v1';
@@ -45,5 +53,13 @@ export class ApiService {
 
   getUsage(): Observable<{ day: string; hits: number; successes: number; failures: number }[]> {
     return this.http.get<{ day: string; hits: number; successes: number; failures: number }[]>(`${this.baseUrl}/metrics/usage`);
+  }
+
+  getPlans(): Observable<Plan[]> {
+    return this.http.get<Plan[]>(`${this.baseUrl}/billing/plans`);
+  }
+
+  createCheckout(payload: { plan_id: string; success_url: string; cancel_url: string }): Observable<{ checkout_url: string }> {
+    return this.http.post<{ checkout_url: string }>(`${this.baseUrl}/billing/checkout`, payload);
   }
 }

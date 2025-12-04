@@ -21,6 +21,7 @@ async def create_tenant(payload: TenantCreate, session: AsyncSession = Depends(g
         name=payload.name,
         contact_email=payload.contact_email,
         plan=payload.plan,
+        webhook_url=str(payload.webhook_url) if payload.webhook_url else None,
         api_key_hash=hash_api_key(api_key),
         webhook_secret=generate_api_key(),
     )

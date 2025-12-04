@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from typing import Any
 
 import httpx
@@ -6,10 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.security import sign_payload
+from app.core.security import sign_payload, utcnow
 from app.models.enums import TransactionStatus
 from app.models.tenant import Tenant
 from app.models.transaction import Transaction
+from app.models.webhook_delivery import WebhookDelivery
 
 
 class WebhookService:
@@ -20,6 +22,9 @@ class WebhookService:
         self.client = httpx.AsyncClient()
 
     async def send_transaction_update(self, transaction: Transaction, event_type: str) -> None:
+        if not self.tenant.webhook_url:
+            return
+
         payload = {
             "user_reference": transaction.wallet.user_reference if transaction.wallet else None,
             "network": transaction.network.value,
@@ -29,18 +34,58 @@ class WebhookService:
             "event_type": event_type,
             "status": transaction.status.value,
         }
-        await self._dispatch(payload)
+        delivery = WebhookDelivery(
+            tenant_id=self.tenant.id,
+            transaction_id=transaction.id,
+            url=self.tenant.webhook_url,
+            event_type=event_type,
+            payload=payload,
+            attempts=0,
+        )
+        self.session.add(delivery)
+        await self.session.flush()
+        delivery.attempts += 1
 
-    async def _dispatch(self, payload: dict[str, Any]) -> None:
+        status_code, error = await self._dispatch(self.tenant.webhook_url, payload)
+        delivery.status_code = status_code
+        if error:
+            delivery.last_error = error
+            delivery.next_retry_at = self._schedule_next_retry(delivery.attempts)
+        else:
+            delivery.last_error = None
+            delivery.next_retry_at = None
+
+    async def _dispatch(self, url: str, payload: dict[str, Any]) -> tuple[int | None, str | None]:
         body = json.dumps(payload)
         signature = sign_payload(self.tenant.webhook_secret, body.encode())
         headers = {
             "X-Signature": signature,
             "Content-Type": "application/json",
         }
-        # TODO: fetch webhook URLs per tenant; single URL to keep example concise
-        webhook_url = "https://tenant.app/webhooks/crypto"
-        await self.client.post(webhook_url, content=body, headers=headers)
+        try:
+            response = await self.client.post(url, content=body, headers=headers, timeout=10.0)
+            return response.status_code, None if response.is_success else response.text
+        except httpx.HTTPError as exc:
+            return None, str(exc)
+
+    def _schedule_next_retry(self, attempts: int):
+        backoffs = self.settings.webhook_retry_backoff_seconds
+        idx = min(attempts - 1, len(backoffs) - 1)
+        return utcnow() + timedelta(seconds=backoffs[idx])
+
+    async def retry_delivery(self, delivery: WebhookDelivery) -> None:
+        target_url = delivery.url or self.tenant.webhook_url
+        if not target_url:
+            return
+        delivery.attempts += 1
+        status_code, error = await self._dispatch(target_url, delivery.payload)
+        delivery.status_code = status_code
+        if error:
+            delivery.last_error = error
+            delivery.next_retry_at = self._schedule_next_retry(delivery.attempts)
+        else:
+            delivery.last_error = None
+            delivery.next_retry_at = None
 
     async def handle_provider_event(self, provider_payload: dict[str, Any]) -> Transaction:
         tx_hash = provider_payload["tx_hash"]

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     fireblocks_api_key: str = ""
     fireblocks_private_key_path: str = ""
+    fireblocks_api_base: str = "https://api.fireblocks.io"
     moralis_api_key: str = ""
     alchemy_api_key: str = ""
 
@@ -25,6 +26,12 @@ class Settings(BaseSettings):
 
     auth_hmac_algo: str = "sha256"
     auth_token_ttl_minutes: int = 15
+
+    stripe_api_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_starter: str = ""
+    stripe_price_growth: str = ""
+    stripe_price_enterprise: str = ""
 
     class Config:
         env_file = ".env"
