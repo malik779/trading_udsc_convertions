@@ -1,0 +1,20 @@
+<h2>Choose Your Plan</h2>
+<div class="plans">
+  <label *ngFor="let plan of plans" [class.selected]="form.value.plan === plan.id">
+    <input type="radio" formControlName="plan" [value]="plan.id" />
+    <div>
+      <h3>{{ plan.id | titlecase }}</h3>
+      <p class="price">${{ plan.price }}/mo</p>
+      <p>{{ plan.quota }} · {{ plan.chains }} chains</p>
+    </div>
+  </label>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="checkout()" class="payment">
+  <input placeholder="Card number" formControlName="card" />
+  <div class="row">
+    <input placeholder="MM/YY" formControlName="expiry" />
+    <input placeholder="CVC" formControlName="cvc" />
+  </div>
+  <button type="submit">Subscribe</button>
+</form>

@@ -1,0 +1,24 @@
+<h2>API Hit Log</h2>
+<p *ngIf="isLoading">Loading...</p>
+<table *ngIf="!isLoading">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Type</th>
+      <th>Status</th>
+      <th>Network</th>
+      <th>Hash</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let log of logs">
+      <td>{{ log.id }}</td>
+      <td>{{ log.type }}</td>
+      <td>{{ log.status }}</td>
+      <td>{{ log.network }}</td>
+      <td>{{ log.tx_hash || 'pending' }}</td>
+      <td>{{ log.created_at | date: 'short' }}</td>
+    </tr>
+  </tbody>
+</table>

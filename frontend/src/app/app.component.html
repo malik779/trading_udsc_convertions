@@ -1,0 +1,18 @@
+<div class="layout">
+  <nav class="sidebar" [class.closed]="!sidebarOpen">
+    <div class="logo">Crypto Pay</div>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+    <a routerLink="/logs" routerLinkActive="active">API Logs</a>
+    <a routerLink="/subscription" routerLinkActive="active">Subscription</a>
+  </nav>
+  <main>
+    <header>
+      <button class="ghost" (click)="sidebarOpen = !sidebarOpen">☰</button>
+      <div class="spacer"></div>
+      <span class="badge">Tenant</span>
+    </header>
+    <section class="content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

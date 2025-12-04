@@ -1,0 +1,92 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.grid article {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.grid h3 {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #8f96b9;
+}
+
+.grid p {
+  font-size: 2rem;
+  margin: 0.2rem 0 0;
+}
+
+.filters {
+  margin: 2rem 0 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: #9aa3c7;
+}
+
+select,
+button {
+  margin-top: 0.35rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6f7fb;
+  padding: 0.5rem 0.75rem;
+}
+
+button {
+  cursor: pointer;
+  border-color: var(--primary);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+th,
+td {
+  padding: 0.75rem 1rem;
+}
+
+th {
+  text-align: left;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8f96b9;
+}
+
+tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pill {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.pill.success {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--success);
+}
+
+.pill.pending {
+  background: rgba(255, 191, 0, 0.15);
+  color: #ffbf00;
+}
